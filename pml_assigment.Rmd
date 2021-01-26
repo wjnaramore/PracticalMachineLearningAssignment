@@ -18,7 +18,7 @@ C: lifting the dumbbell only halfway,
 D: lowering the dumbbell only halfway,  
 E: throwing the hips to the front.  
   
-A random forest model was trained to accurately identify each of these classifications using the relevant sensor data. The in-sample accuracy of the trained model was estimated using 10% of the training data that was set aside prior to training.
+A random forest model was trained to accurately identify each of these classifications using the relevant sensor data. The out of sample  accuracy was estimated using 10% of the training data that was set aside prior to training.
 
 ## Step 1 - Load and Subset
 
@@ -83,7 +83,7 @@ confusionMatrix(train_pred,factor(training2$classe))
 
 ## Step 4.2 - Results of Training-Test Set
 
-Due to the high accuracy of the model, 10% of the training data was partitioned to better estimate the in-sample accuracy of the model. The accuracy of the set, called the training-test set, was 97.2%.
+Due to the high accuracy of the model, 10% of the training data was partitioned to better estimate the out of sample accuracy of the model. The accuracy of the set, called the training-test set, was 97.2%.
 
 ```{r results_training_test}
 trainPCtest<-predict(preProc,training2_test[,-53])

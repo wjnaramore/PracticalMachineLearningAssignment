@@ -424,7 +424,7 @@ B: throwing the elbows to the front,<br />
 C: lifting the dumbbell only halfway,<br />
 D: lowering the dumbbell only halfway,<br />
 E: throwing the hips to the front.</p>
-<p>A random forest model was trained to accurately identify each of these classifications using the relevant sensor data. The in-sample accuracy of the trained model was estimated using 10% of the training data that was set aside prior to training.</p>
+<p>A random forest model was trained to accurately identify each of these classifications using the relevant sensor data. The out of sample accuracy was estimated using 10% of the training data that was set aside prior to training.</p>
 </div>
 <div id="step-1---load-and-subset" class="section level2">
 <h2>Step 1 - Load and Subset</h2>
@@ -538,7 +538,7 @@ confusionMatrix(train_pred,factor(training2$classe))</code></pre>
 </div>
 <div id="step-4.2---results-of-training-test-set" class="section level2">
 <h2>Step 4.2 - Results of Training-Test Set</h2>
-<p>Due to the high accuracy of the model, 10% of the training data was partitioned to better estimate the in-sample accuracy of the model. The accuracy of the set, called the training-test set, was 97.2%.</p>
+<p>Due to the high accuracy of the model, 10% of the training data was partitioned to better estimate the out of sample accuracy of the model. The accuracy of the set, called the training-test set, was 97.2%.</p>
 <pre class="r"><code>trainPCtest&lt;-predict(preProc,training2_test[,-53])
 train2test_pred &lt;- predict(modFit,trainPCtest)
 confusionMatrix(train2test_pred,factor(training2_test$classe))</code></pre>
