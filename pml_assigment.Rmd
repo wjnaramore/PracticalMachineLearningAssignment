@@ -1,0 +1,108 @@
+---
+title: "Weight Lifting Exercise Quality Machine Learning Model"
+author: "Jason Naramore"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Summary
+
+The purpose of this assignment is to quantify the quality of weight lifting exercises. Data was collected as described in the reference [1] using 3-axes acceleration, gyroscope, and magnetometer sensors attached to a subject's wrist, upper arm, waist, and dumbbell. Each subject performed Unilateral Dumbbell Bicep Curls that were classified as follows:
+  
+A: exactly according to the specification,  
+B: throwing the elbows to the front,  
+C: lifting the dumbbell only halfway,  
+D: lowering the dumbbell only halfway,  
+E: throwing the hips to the front.  
+  
+A random forest model was trained to accurately identify each of these classifications using the relevant sensor data. The in-sample accuracy of the trained model was estimated using 10% of the training data that was set aside prior to training.
+
+## Step 1 - Load and Subset
+
+First, the training and test sets are loaded. The training set is then subsetted to columns where there are not NA values in the testing set. Also, the first 7 columns are ignored, which contain subject identifiers, timestamps, and other unneeded variables for training. The training set is partitioned into two groups, one containing 90% of the rows to be used for training, and the remaining 10% will be used to estimate the accuracy of the model.
+
+```{r subset}
+library(caret)
+training<-read.csv("pml-training.csv")
+testing<-read.csv("pml-testing.csv")
+
+#only consider columns that appear in testing
+na_mask <- is.na(testing[1,])
+training1<-subset(training,select = !na_mask)
+training1<-subset(training1,select = c(-1:-7))
+
+testing1 <- subset(testing,select = !na_mask)
+testing1 <- subset(testing1,select = c(-1:-7))
+
+set.seed(1234)
+trainIn<- createDataPartition(training1$classe, p = .9,list=FALSE)
+training2<- training1[trainIn,]
+training2_test<- training1[-trainIn,]
+```
+
+## Step 2 - PCA
+
+The 53 remaining variables in the training set are reduced to the most relevant variables using a principal components analysis. Caret's preProcess function is used, with thresh = .8 to identify the principal components that account for 80% of variability. This results in 12 components, so the model can be trained with 12 rather than 53 predictors.
+
+```{r pca}
+preProc<-preProcess(training2[,-53],method = "pca",thresh = .8)
+trainPC <- predict(preProc,training2[,-53])
+```
+
+## Step 3 - Fit Random Forest Model
+
+A random forest model is chosen to train this data, consistent with the authors reasoning in their publication [1]. Cross-validation is handled by setting the train control method to "cv". The accuracy of the final model is shown in the plot, where the resampling results indicate 96.7% accuracy with randomly selected predictors (mtry) set to 2.
+
+```{r fit, cache=TRUE, fig.cap = "Estimated Accuracy by Resampling"}
+fitControl <- trainControl(method = "cv")
+set.seed(1234)
+modFit<-train(y = training2$classe, x = trainPC,method = "rf",trControl = fitControl)
+modFit
+plot(modFit)
+```
+
+## Step 3.1 - Plot Variable Importance
+
+The importance of each principal components is shown in the plot below.
+
+```{r varImp, fig.cap = "Variable Importance in The Random Forest Model"}
+plot(varImp(modFit))
+```
+
+## Step 4.1 - Results of Training Set
+
+The final model classifies the training set with 100% accuracy.
+
+```{r results_training}
+train_pred <- predict(modFit,trainPC)
+confusionMatrix(train_pred,factor(training2$classe))
+```
+
+## Step 4.2 - Results of Training-Test Set
+
+Due to the high accuracy of the model, 10% of the training data was partitioned to better estimate the in-sample accuracy of the model. The accuracy of the set, called the training-test set, was 97.2%.
+
+```{r results_training_test}
+trainPCtest<-predict(preProc,training2_test[,-53])
+train2test_pred <- predict(modFit,trainPCtest)
+confusionMatrix(train2test_pred,factor(training2_test$classe))
+```
+
+## Step 5 - Predict Testing Set
+
+The last step is to predict the testing set. The classe is unknown in the testing set.
+
+```{r test_prediction}
+testPC<-predict(preProc,testing1[,-53])
+test_prediction <- predict(modFit,testPC)
+factor_levels <- levels(factor(training$classe))
+test_predict_factors <- factor_levels[test_prediction]
+data.frame(problem_id = testing1$problem_id, test_predict_factors)
+```
+
+## References
+
+[1] Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013. Website: http://groupware.les.inf.puc-rio.br/har#ixzz6kg2ypyaf
